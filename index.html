@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로또 명당 - 번호 생성 & 실시간 뉴스</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f3f4f6; color: #1f2937; padding: 16px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 480px; }
+    
+    .tabs { display: flex; background: #e5e7eb; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #4b5563; font-size: 15px; }
+    .tab-btn.active { background: #ffffff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
+
+    .ball-container { display: flex; justify-content: center; gap: 8px; margin: 24px 0; }
+    .ball { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+    .ball-1 { background-color: #f59e0b; }
+    .ball-10 { background-color: #3b82f6; }
+    .ball-20 { background-color: #ef4444; }
+    .ball-30 { background-color: #6b7280; }
+    .ball-40 { background-color: #10b981; }
+
+    .btn-generate { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn-generate:active { background: #1d4ed8; }
+
+    .news-item { border-bottom: 1px solid #e5e7eb; padding: 14px 0; text-decoration: none; display: block; color: inherit; }
+    .news-item:last-child { border-bottom: none; }
+    .news-title { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; color: #111827; }
+    .news-date { font-size: 12px; color: #9ca3af; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('generator')">번호 생성기</button>
+    <button class="tab-btn" onclick="switchTab('news')">최신 로또 뉴스</button>
+  </div>
+
+  <div id="tab-generator" class="tab-content active">
+    <div class="card" style="text-align: center;">
+      <h2 style="font-size: 18px; margin-bottom: 8px;">이번 주 행운 번호</h2>
+      <p style="font-size: 13px; color: #6b7280;">무작위 번호 추출 알고리즘</p>
+      <div class="ball-container" id="ballContainer">
+        <div class="ball ball-1">?</div>
+        <div class="ball ball-10">?</div>
+        <div class="ball ball-20">?</div>
+        <div class="ball ball-30">?</div>
+        <div class="ball ball-40">?</div>
+        <div class="ball ball-1">?</div>
+      </div>
+      <button class="btn-generate" onclick="generateNumbers()">새 번호 뽑기</button>
+    </div>
+  </div>
+
+  <div id="tab-news" class="tab-content">
+    <div class="card">
+      <h2 style="font-size: 18px; margin-bottom: 12px;">실시간 로또 소식</h2>
+      <div id="newsList">
+        <p style="font-size: 14px; color: #6b7280; text-align: center; padding: 20px 0;">뉴스를 불러오는 중...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://iqnhtulvtbscnyaleugn.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlxbmh0dWx2dGJzY255YWxldWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNDk0MjcsImV4cCI6MjEwNDcyNTQyN30.NCxXxvpFxf6W5Q0_BMwWV11dLYtNnn8gsgIpwD68RlA';
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    if (tab === 'generator') {
+      event.target.classList.add('active');
+      document.getElementById('tab-generator').classList.add('active');
+    } else {
+      event.target.classList.add('active');
+      document.getElementById('tab-news').classList.add('active');
+      loadNews();
+    }
+  }
+
+  function generateNumbers() {
+    const nums = [];
+    while (nums.length < 6) {
+      const n = Math.floor(Math.random() * 45) + 1;
+      if (!nums.includes(n)) nums.push(n);
+    }
+    nums.sort((a, b) => a - b);
+
+    const container = document.getElementById('ballContainer');
+    container.innerHTML = '';
+    nums.forEach(n => {
+      let colorClass = 'ball-1';
+      if (n >= 11 && n <= 20) colorClass = 'ball-10';
+      else if (n >= 21 && n <= 30) colorClass = 'ball-20';
+      else if (n >= 31 && n <= 40) colorClass = 'ball-30';
+      else if (n >= 41) colorClass = 'ball-40';
+
+      const ball = document.createElement('div');
+      ball.className = `ball ${colorClass}`;
+      ball.innerText = n;
+      container.appendChild(ball);
+    });
+  }
+
+  async function loadNews() {
+    const newsContainer = document.getElementById('newsList');
+    try {
+      const { data, error } = await db
+        .from('lotto_news')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(15);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        newsContainer.innerHTML = '<p style="text-align:center; padding: 20px; color:#6b7280;">등록된 뉴스가 없습니다.</p>';
+        return;
+      }
+
+      newsContainer.innerHTML = data.map(item => `
+        <a href="${item.link}" target="_blank" rel="noopener noreferrer" class="news-item">
+          <div class="news-title">${item.title}</div>
+          <div class="news-date">${item.pub_date || ''}</div>
+        </a>
+      `).join('');
+    } catch (e) {
+      newsContainer.innerHTML = '<p style="color:red; text-align:center;">뉴스를 불러오는 데 실패했습니다.</p>';
+    }
+  }
+</script>
+</body>
+</html>
