@@ -3,22 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>로또 명당 - 번호 생성 & 실시간 뉴스</title>
+  <title>로또 명당 - 번호 생성 & QR 당첨 확인</title>
+  <!-- Supabase JS 라이브러리 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- HTML5 QR 코드 스캐너 라이브러리 -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body { background-color: #f3f4f6; color: #1f2937; padding: 16px; display: flex; justify-content: center; }
     .container { width: 100%; max-width: 480px; }
     
-    .tabs { display: flex; background: #e5e7eb; border-radius: 12px; padding: 4px; margin-bottom: 20px; }
-    .tab-btn { flex: 1; padding: 10px; border: none; background: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #4b5563; font-size: 15px; }
+    /* 상단 3단 탭 메뉴 */
+    .tabs { display: flex; background: #e5e7eb; border-radius: 12px; padding: 4px; margin-bottom: 20px; gap: 4px; }
+    .tab-btn { flex: 1; padding: 10px 4px; border: none; background: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #4b5563; font-size: 14px; transition: all 0.2s; }
     .tab-btn.active { background: #ffffff; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
+    /* 공통 카드 */
     .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom: 16px; }
 
+    /* 1. 번호 생성기 */
     .ball-container { display: flex; justify-content: center; gap: 8px; margin: 24px 0; }
     .ball { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
     .ball-1 { background-color: #f59e0b; }
@@ -27,9 +33,15 @@
     .ball-30 { background-color: #6b7280; }
     .ball-40 { background-color: #10b981; }
 
-    .btn-generate { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
-    .btn-generate:active { background: #1d4ed8; }
+    .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    .btn-main:active { background: #1d4ed8; }
 
+    /* 2. QR 스캐너 */
+    #reader { width: 100%; border-radius: 12px; overflow: hidden; border: none !important; }
+    .qr-guide { font-size: 13px; color: #6b7280; text-align: center; margin-top: 12px; line-height: 1.5; }
+    .btn-stop { background: #ef4444; margin-top: 10px; display: none; }
+
+    /* 3. 뉴스 목록 */
     .news-item { border-bottom: 1px solid #e5e7eb; padding: 14px 0; text-decoration: none; display: block; color: inherit; }
     .news-item:last-child { border-bottom: none; }
     .news-title { font-size: 15px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; color: #111827; }
@@ -39,15 +51,18 @@
 <body>
 
 <div class="container">
+  <!-- 상단 3개 탭 -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('generator')">번호 생성기</button>
-    <button class="tab-btn" onclick="switchTab('news')">최신 로또 뉴스</button>
+    <button class="tab-btn active" onclick="switchTab(this, 'generator')">번호 생성</button>
+    <button class="tab-btn" onclick="switchTab(this, 'qr')">QR 당첨확인</button>
+    <button class="tab-btn" onclick="switchTab(this, 'news')">로또 뉴스</button>
   </div>
 
+  <!-- 1. 번호 생성기 탭 -->
   <div id="tab-generator" class="tab-content active">
     <div class="card" style="text-align: center;">
       <h2 style="font-size: 18px; margin-bottom: 8px;">이번 주 행운 번호</h2>
-      <p style="font-size: 13px; color: #6b7280;">무작위 번호 추출 알고리즘</p>
+      <p style="font-size: 13px; color: #6b7280;">무작위 자동 번호 추출</p>
       <div class="ball-container" id="ballContainer">
         <div class="ball ball-1">?</div>
         <div class="ball ball-10">?</div>
@@ -56,10 +71,28 @@
         <div class="ball ball-40">?</div>
         <div class="ball ball-1">?</div>
       </div>
-      <button class="btn-generate" onclick="generateNumbers()">새 번호 뽑기</button>
+      <button class="btn-main" onclick="generateNumbers()">새 번호 뽑기</button>
     </div>
   </div>
 
+  <!-- 2. QR 코드 스캐너 탭 -->
+  <div id="tab-qr" class="tab-content">
+    <div class="card" style="text-align: center;">
+      <h2 style="font-size: 18px; margin-bottom: 8px;">로또 용지 QR 당첨 확인</h2>
+      <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px;">로또 상단 우측의 사각 QR 코드를 카메라로 비춰주세요.</p>
+      
+      <div id="reader"></div>
+      
+      <button id="btnStartQr" class="btn-main" onclick="startScanner()">카메라 켜기 & 스캔 시작</button>
+      <button id="btnStopQr" class="btn-main btn-stop" onclick="stopScanner()">카메라 끄기</button>
+
+      <div class="qr-guide">
+        💡 스캔 성공 시 즉시 동행복권 공식 당첨 확인 페이지로 연결됩니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 최신 뉴스 탭 -->
   <div id="tab-news" class="tab-content">
     <div class="card">
       <h2 style="font-size: 18px; margin-bottom: 12px;">실시간 로또 소식</h2>
@@ -71,24 +104,32 @@
 </div>
 
 <script>
+  // 1. Supabase 초기화
   const SUPABASE_URL = 'https://iqnhtulvtbscnyaleugn.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlxbmh0dWx2dGJzY255YWxldWduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkxNDk0MjcsImV4cCI6MjEwNDcyNTQyN30.NCxXxvpFxf6W5Q0_BMwWV11dLYtNnn8gsgIpwD68RlA';
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  function switchTab(tab) {
+  let html5QrCode = null;
+
+  // 2. 탭 전환
+  function switchTab(el, tab) {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     
-    if (tab === 'generator') {
-      event.target.classList.add('active');
-      document.getElementById('tab-generator').classList.add('active');
-    } else {
-      event.target.classList.add('active');
-      document.getElementById('tab-news').classList.add('active');
+    el.classList.add('active');
+    document.getElementById(`tab-${tab}`).classList.add('active');
+
+    // 다른 탭으로 이동 시 카메라 끄기
+    if (tab !== 'qr') {
+      stopScanner();
+    }
+
+    if (tab === 'news') {
       loadNews();
     }
   }
 
+  // 3. 번호 생성
   function generateNumbers() {
     const nums = [];
     while (nums.length < 6) {
@@ -113,6 +154,50 @@
     });
   }
 
+  // 4. QR 코드 스캐너 기능
+  function startScanner() {
+    const btnStart = document.getElementById('btnStartQr');
+    const btnStop = document.getElementById('btnStopQr');
+
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode.start(
+      { facingMode: "environment" }, // 후면 카메라 우선 사용
+      config,
+      (decodedText) => {
+        // QR 스캔 성공 시
+        stopScanner();
+        if (decodedText.startsWith('http://') || decodedText.startsWith('https://')) {
+          window.location.href = decodedText;
+        } else {
+          alert("스캔 내용: " + decodedText);
+        }
+      },
+      (errorMessage) => {
+        // 스캔 중 지속 에러는 무시
+      }
+    ).then(() => {
+      btnStart.style.display = 'none';
+      btnStop.style.display = 'block';
+    }).catch(err => {
+      alert("카메라 권한 허용이 필요하거나 브라우저에서 카메라를 지원하지 않습니다.");
+    });
+  }
+
+  function stopScanner() {
+    if (html5QrCode && html5QrCode.isScanning) {
+      html5QrCode.stop().then(() => {
+        document.getElementById('btnStartQr').style.display = 'block';
+        document.getElementById('btnStopQr').style.display = 'none';
+      }).catch(err => console.error(err));
+    }
+  }
+
+  // 5. 뉴스 불러오기
   async function loadNews() {
     const newsContainer = document.getElementById('newsList');
     try {
