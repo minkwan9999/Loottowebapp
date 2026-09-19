@@ -2,8 +2,10 @@ name: Daily Lotto News Bot
 
 on:
   schedule:
-    # 한국 시간 기준 매일 오전 7시 자동 실행 (UTC 22:00)
+    # 한국 시간 기준 매일 오전 7시 - 뉴스 수집
     - cron: '0 22 * * *'
+    # 한국 시간 기준 토요일 21:00~22:45, 15분 간격 - 당첨번호 채점
+    - cron: '0,15,30,45 12,13 * * 6'
   workflow_dispatch: # 테스트용 수동 실행 버튼 활성화
 
 jobs:
@@ -21,8 +23,9 @@ jobs:
       - name: 필수 패키지 설치
         run: pip install requests supabase
 
-      - name: 뉴스 수집 실행
+      - name: 뉴스 수집 + 채점 실행
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python crawler.py
