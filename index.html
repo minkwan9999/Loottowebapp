@@ -149,13 +149,29 @@
 
   <!-- 4. 번호 추출기 -->
   <div id="tab-generator" class="tab-content">
-    <div class="card" style="text-align: center;">
-      <h3 style="font-size: 16px; margin-bottom: 4px;">빅데이터 기반 추천 5게임</h3>
-      <p style="font-size: 12px; color: #6b7280; margin-bottom: 14px;">역대 다빈출 번호 + 내 최애 번호 밸런스 조합</p>
-      <div id="recommendedGamesContainer"></div>
-      <button class="btn-main" onclick="generateSmart5Games()">추천 5게임 새로 생성</button>
-    </div>
+  <div class="card" id="lottoStatusBanner" style="text-align:center;">
+    <!-- renderStatusBanner()가 채움 -->
   </div>
+
+  <div class="card">
+    <h3 style="font-size: 16px; margin-bottom: 4px;">모의 로또 - 이번 주 5칸</h3>
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">칸마다 생성 후 마음에 들면 채택하세요. 최대 5칸.</p>
+    <p id="unadoptedNotice" style="font-size:12px; color:#ef4444; font-weight:bold; margin-bottom:10px; display:none;">⚠ 채택하지 않은 번호는 채점되지 않아요</p>
+    <div id="slotContainer"></div>
+  </div>
+
+  <div class="card" id="resultsSection">
+    <!-- renderResultsSection()이 채움: 내 결과 / 이번 주 랭킹 / 명예의 전당 -->
+  </div>
+
+  <div class="card">
+    <h3 style="font-size: 16px; margin-bottom: 6px;">규칙 요청하기 💡</h3>
+    <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">어떤 조건으로 번호를 뽑고 싶으세요? 검토 후 반영할게요.</p>
+    <textarea id="ruleRequestText" rows="2" placeholder="예: 생일 숫자만 넣고 싶어요 (로그인 필요)"
+      style="width:100%; border:1px solid #d1d5db; border-radius:8px; padding:8px; font-size:13px; resize:none;"></textarea>
+    <button class="btn-main" onclick="submitRuleRequest()">요청 보내기</button>
+  </div>
+</div>
 
   <!-- 5. 최신 뉴스 -->
   <div id="tab-news" class="tab-content">
