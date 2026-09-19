@@ -482,9 +482,12 @@
     const container = document.getElementById('ruleToggles');
     if (!container) return;
     container.innerHTML = ruleCatalog.map(r => `
-      <label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:6px 0;">
-        <input type="checkbox" value="${r.id}" ${activeRuleIds.has(r.id) ? 'checked' : ''} onchange="toggleRule('${r.id}', this.checked)">
-        ${r.label}
+      <label style="display:block; padding:8px 0; border-bottom:1px solid #f3f4f6;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" value="${r.id}" ${activeRuleIds.has(r.id) ? 'checked' : ''} onchange="toggleRule('${r.id}', this.checked)">
+          <span style="font-size:13px; font-weight:bold;">${r.label}</span>
+        </div>
+        ${r.description ? `<p style="font-size:11px; color:#9ca3af; margin:4px 0 0 26px;">${r.description}</p>` : ''}
       </label>
     `).join('');
   }
@@ -505,9 +508,9 @@
 
   function passesFilters(numbers, activeRules, excludeSet) {
     for (const rule of activeRules) {
-      if (rule.id === 'oddEvenRatio') {
-        const evenCount = numbers.filter(n => n % 2 === 0).length;
-        if (evenCount > rule.params.maxEven) return false;
+      if (rule.id === 'oddEvenBalance') {
+        const oddCount = numbers.filter(n => n % 2 !== 0).length;
+        if (oddCount < rule.params.minOdd || oddCount > rule.params.maxOdd) return false;
       }
       if (rule.id === 'sumRange') {
         const sum = numbers.reduce((a, b) => a + b, 0);
