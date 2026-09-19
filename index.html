@@ -25,8 +25,8 @@
     .btn-auth { background: #2563eb; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
     .btn-auth.logout { background: #6b7280; }
 
-    /* 5개 네비게이션 탭 */
-    .tabs { display: grid; grid-template-columns: repeat(5, 1fr); background: #e5e7eb; border-radius: 12px; padding: 3px; margin-bottom: 14px; gap: 2px; }
+    /* 4개 네비게이션 탭 */
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); background: #e5e7eb; border-radius: 12px; padding: 3px; margin-bottom: 14px; gap: 2px; }
     .tab-btn { padding: 9px 2px; border: none; background: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #4b5563; font-size: 11px; }
     .tab-btn.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
@@ -46,25 +46,15 @@
 
     .btn-main { width: 100%; background: #2563eb; color: white; border: none; padding: 12px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; margin-top: 8px; }
 
-    /* 보관 서랍 카드 */
+    /* 보관 서랍 / 슬롯 카드 */
     .history-card { background: #fafafa; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
     .history-header { display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; margin-bottom: 8px; }
-
-    /* 통계 랭킹 뱃지 */
-    .stat-badge { display: inline-flex; align-items: center; gap: 6px; background: #eef2ff; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; color: #3730a3; margin: 4px; }
+    .btn-post-del { background: none; border: none; color: #ef4444; font-size: 11px; cursor: pointer; padding: 0; }
 
     /* 뉴스 리스트 */
     .news-item { border-bottom: 1px solid #e5e7eb; padding: 10px 0; text-decoration: none; display: block; color: inherit; }
     .news-title { font-size: 14px; font-weight: 600; line-height: 1.3; color: #111827; }
     .news-date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
-
-    /* 게시판 스타일 */
-    .post-item { border-bottom: 1px solid #f3f4f6; padding: 12px 0; }
-    .post-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #6b7280; margin-bottom: 6px; }
-    .post-user { font-weight: bold; color: #1f2937; }
-    .post-content { font-size: 14px; line-height: 1.4; white-space: pre-wrap; word-break: break-all; }
-    .post-actions { display: flex; gap: 8px; margin-top: 6px; }
-    .btn-post-del { background: none; border: none; color: #ef4444; font-size: 11px; cursor: pointer; padding: 0; }
   </style>
 </head>
 <body>
@@ -76,12 +66,11 @@
     <button id="btnAuth" class="btn-auth" onclick="handleAuth()">구글 로그인</button>
   </div>
 
-  <!-- 상단 메뉴 탭 (5개 구성) -->
+  <!-- 상단 메뉴 탭 (4개 구성) -->
   <div class="tabs">
     <button class="tab-btn active" onclick="switchTab(this, 'qr')">QR서랍</button>
-    <button class="tab-btn" onclick="switchTab(this, 'community')">게시판</button>
-    <button class="tab-btn" onclick="switchTab(this, 'analysis')">분석</button>
     <button class="tab-btn" onclick="switchTab(this, 'generator')">추출기</button>
+    <button class="tab-btn" onclick="switchTab(this, 'ranking')">랭킹</button>
     <button class="tab-btn" onclick="switchTab(this, 'news')">뉴스</button>
   </div>
 
@@ -103,52 +92,16 @@
     </div>
   </div>
 
-  <!-- 2. 나눔 게시판 -->
-  <div id="tab-community" class="tab-content">
-    <div class="card">
-      <h3 style="font-size: 16px; margin-bottom: 4px;">로또 나눔 게시판 💬</h3>
-      <p style="font-size: 12px; color: #6b7280; margin-bottom: 12px;">이번 주 예상 번호나 당첨 이야기를 나눠보세요.</p>
-
-      <div id="postInputArea">
-        <textarea id="postText" rows="3" placeholder="내용을 작성해주세요. (로그인 필요)" style="width:100%; border:1px solid #d1d5db; border-radius:8px; padding:10px; font-size:13px; resize:none;"></textarea>
-        <button id="btnSubmitPost" class="btn-main" style="margin-top:6px;" onclick="createPost()">글 등록하기</button>
-      </div>
-
-      <div id="postList" style="margin-top: 16px;">
-        <p style="text-align: center; font-size: 13px; color: #9ca3af; padding: 20px 0;">게시글을 불러오는 중입니다...</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- 3. 스마트 분석 -->
-  <div id="tab-analysis" class="tab-content">
-    <div class="card">
-      <h3 style="font-size: 16px; margin-bottom: 4px;">내가 가장 많이 산 번호 TOP 5</h3>
-      <p style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">내 보관함 QR 데이터 분석 결과</p>
-      <div id="myTopNumbers" style="display: flex; flex-wrap: wrap; justify-content: center;">
-        <span style="font-size: 13px; color: #9ca3af; padding: 10px;">스캔된 로또 데이터가 없습니다.</span>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 style="font-size: 16px; margin-bottom: 4px;">역대 최다 당첨 번호 TOP 6</h3>
-      <p style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">동행복권 누적 최다 빈출 번호</p>
-      <div id="officialTopNumbers" class="ball-row">
-        <div class="ball ball-30">34</div>
-        <div class="ball ball-10">18</div>
-        <div class="ball ball-10">12</div>
-        <div class="ball ball-20">27</div>
-        <div class="ball ball-10">13</div>
-        <div class="ball ball-30">33</div>
-      </div>
-      <p style="font-size: 11px; color: #9ca3af; text-align: center; margin-top: 6px;">* 34번(190회 이상 최다 출현 기준)</p>
-    </div>
-  </div>
-
-  <!-- 4. 추출기 (모의 로또: 생성→채택→결과→랭킹→공유→요청함) -->
+  <!-- 2. 추출기 (모의 로또: 생성→채택→요청함) -->
   <div id="tab-generator" class="tab-content">
     <div class="card" id="lottoStatusBanner" style="text-align:center;">
       <!-- renderStatusBanner()가 채움 -->
+    </div>
+
+    <div class="card">
+      <h3 style="font-size: 16px; margin-bottom: 4px;">규칙 선택</h3>
+      <p style="font-size: 12px; color: #6b7280; margin-bottom: 8px;">아무것도 선택 안 하면 완전 랜덤이에요. 여러 개 동시 선택 가능.</p>
+      <div id="ruleToggles"></div>
     </div>
 
     <div class="card">
@@ -156,10 +109,6 @@
       <p style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">칸마다 생성 후 마음에 들면 채택하세요. 최대 5칸.</p>
       <p id="unadoptedNotice" style="font-size:12px; color:#ef4444; font-weight:bold; margin-bottom:10px; display:none;">⚠ 채택하지 않은 번호는 채점되지 않아요</p>
       <div id="slotContainer"></div>
-    </div>
-
-    <div class="card" id="resultsSection">
-      <!-- renderResultsSection()이 채움: 내 결과 / 이번 주 랭킹 / 명예의 전당 -->
     </div>
 
     <div class="card">
@@ -171,7 +120,14 @@
     </div>
   </div>
 
-  <!-- 5. 최신 뉴스 -->
+  <!-- 3. 랭킹 (내 결과 / 이번 주 랭킹 / 명예의 전당) -->
+  <div id="tab-ranking" class="tab-content">
+    <div class="card" id="resultsSection">
+      <!-- renderResultsSection()이 채움 -->
+    </div>
+  </div>
+
+  <!-- 4. 최신 뉴스 -->
   <div id="tab-news" class="tab-content">
     <div class="card">
       <h3 style="font-size: 16px; margin-bottom: 10px;">실시간 로또 소식 (최근 10일)</h3>
@@ -196,20 +152,17 @@
     currentUser = session?.user || null;
     const statusText = document.getElementById('userStatusText');
     const btnAuth = document.getElementById('btnAuth');
-    const postText = document.getElementById('postText');
 
     if (currentUser) {
       const emailId = currentUser.email.split('@')[0];
       statusText.innerText = `${emailId}님 환영합니다!`;
       btnAuth.innerText = '로그아웃';
       btnAuth.className = 'btn-auth logout';
-      if (postText) postText.placeholder = `${emailId}님, 자유롭게 글을 남겨보세요!`;
       await loadUserLottoHistory();
     } else {
       statusText.innerText = '로그인이 필요합니다';
       btnAuth.innerText = '구글 로그인';
       btnAuth.className = 'btn-auth';
-      if (postText) postText.placeholder = '로그인 후 작성하실 수 있습니다.';
       document.getElementById('historyList').innerHTML = '<p style="text-align: center; font-size: 13px; color: #9ca3af; padding: 16px 0;">로그인하시면 스캔한 로또가 여기에 표시됩니다.</p>';
       userPurchasedNumbers = [];
     }
@@ -258,9 +211,8 @@
     currentTabName = tab;
 
     if (tab !== 'qr') stopScanner();
-    if (tab === 'community') loadPosts();
-    if (tab === 'analysis') renderAnalysis();
-    if (tab === 'generator') { renderStatusBanner(); loadMySlotsForThisRound(); renderResultsSection(); }
+    if (tab === 'generator') { renderStatusBanner(); loadMySlotsForThisRound(); loadRuleCatalog(); }
+    if (tab === 'ranking') renderResultsSection();
     if (tab === 'news') loadNews();
   }
 
@@ -414,117 +366,7 @@
     }).join('');
   }
 
-  // 6. 커뮤니티 게시판 로직
-  async function loadPosts() {
-    const listEl = document.getElementById('postList');
-    const { data, error } = await db
-      .from('community_posts')
-      .select('*')
-      .order('id', { ascending: false })
-      .limit(30);
-
-    if (error) {
-      listEl.innerHTML = `<p style="text-align:center; color:red; font-size:13px;">글을 불러오지 못했습니다: ${error.message}</p>`;
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      listEl.innerHTML = '<p style="text-align:center; color:#9ca3af; font-size:13px; padding:20px 0;">아직 등록된 글이 없습니다. 첫 글을 남겨보세요!</p>';
-      return;
-    }
-
-    listEl.innerHTML = data.map(post => {
-      const isMine = currentUser && currentUser.id === post.user_id;
-      const createdDate = new Date(post.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-
-      return `
-        <div class="post-item">
-          <div class="post-header">
-            <span class="post-user">${post.user_nickname}</span>
-            <span>${createdDate}</span>
-          </div>
-          <div class="post-content">${escapeHtml(post.content)}</div>
-          ${isMine ? `
-            <div class="post-actions">
-              <button class="btn-post-del" onclick="deletePost(${post.id})">삭제</button>
-            </div>
-          ` : ''}
-        </div>
-      `;
-    }).join('');
-  }
-
-  async function createPost() {
-    if (!currentUser) {
-      alert("글을 작성하려면 먼저 구글 로그인이 필요합니다!");
-      return;
-    }
-
-    const textEl = document.getElementById('postText');
-    const content = textEl.value.trim();
-
-    if (!content) {
-      alert("내용을 입력해주세요.");
-      return;
-    }
-
-    const nickname = currentUser.email.split('@')[0];
-
-    const { error } = await db.from('community_posts').insert({
-      user_id: currentUser.id,
-      user_nickname: nickname,
-      content: content
-    });
-
-    if (error) {
-      alert("글 등록 오류: " + error.message);
-    } else {
-      textEl.value = '';
-      await loadPosts();
-    }
-  }
-
-  async function deletePost(postId) {
-    if (!confirm("정말 이 글을 삭제하시겠습니까?")) return;
-
-    const { error } = await db
-      .from('community_posts')
-      .delete()
-      .eq('id', postId);
-
-    if (error) {
-      alert("삭제 실패: " + error.message);
-    } else {
-      await loadPosts();
-    }
-  }
-
-  function escapeHtml(string) {
-    return String(string).replace(/[&<>"']/g, function (s) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s];
-    });
-  }
-
-  // 7. 분석
-  function renderAnalysis() {
-    const myTopEl = document.getElementById('myTopNumbers');
-    if (userPurchasedNumbers.length === 0) {
-      myTopEl.innerHTML = '<span style="font-size: 13px; color: #9ca3af; padding: 10px;">저장된 로또가 없어 분석할 데이터가 부족합니다.</span>';
-      return;
-    }
-
-    const freq = {};
-    userPurchasedNumbers.forEach(n => freq[n] = (freq[n] || 0) + 1);
-    const sorted = Object.keys(freq).map(Number).sort((a, b) => freq[b] - freq[a]).slice(0, 5);
-
-    myTopEl.innerHTML = sorted.map(num => `
-      <div class="stat-badge">
-        <div class="ball ball-sm ${getBallClass(num)}">${num}</div>
-        <span>${freq[num]}회 선택</span>
-      </div>
-    `).join('');
-  }
-
+  // 6. 뉴스
   async function loadNews() {
     const newsContainer = document.getElementById('newsList');
     try {
@@ -551,7 +393,7 @@
   }
 
   // =========================================================
-  // 모의 로또 (추출기 탭): 생성 → 채택 → 결과/랭킹 → 공유 → 요청함
+  // 모의 로또 (추출기 탭): 생성 → 채택 → 요청함
   // =========================================================
 
   const DRAW_HOUR = 20;
@@ -619,6 +461,86 @@
     return Array.from(set).sort((a, b) => a - b);
   }
 
+  // ---------- 규칙 선택 (rule_catalog 연동) ----------
+  let ruleCatalog = [];
+  let activeRuleIds = new Set();
+
+  async function loadRuleCatalog() {
+    const { data, error } = await db.from('rule_catalog').select('*').eq('status', 'active');
+    if (error) {
+      alert('규칙 불러오기 에러: ' + error.message);
+      return;
+    }
+    ruleCatalog = data || [];
+    if (ruleCatalog.length === 0) {
+      alert('규칙 데이터가 0건 조회됐어요. rule_catalog 테이블 상태를 확인해주세요.');
+    }
+    renderRuleToggles();
+  }
+
+  function renderRuleToggles() {
+    const container = document.getElementById('ruleToggles');
+    if (!container) return;
+    container.innerHTML = ruleCatalog.map(r => `
+      <label style="display:flex; align-items:center; gap:8px; font-size:13px; padding:6px 0;">
+        <input type="checkbox" value="${r.id}" ${activeRuleIds.has(r.id) ? 'checked' : ''} onchange="toggleRule('${r.id}', this.checked)">
+        ${r.label}
+      </label>
+    `).join('');
+  }
+
+  function toggleRule(id, checked) {
+    if (checked) activeRuleIds.add(id); else activeRuleIds.delete(id);
+  }
+
+  async function getRecentDrawNumbers(weeks) {
+    const { data } = await db.from('lotto_draws')
+      .select('numbers')
+      .order('round_no', { ascending: false })
+      .limit(weeks);
+    const set = new Set();
+    (data || []).forEach(row => row.numbers.forEach(n => set.add(n)));
+    return set;
+  }
+
+  function passesFilters(numbers, activeRules, excludeSet) {
+    for (const rule of activeRules) {
+      if (rule.id === 'oddEvenRatio') {
+        const evenCount = numbers.filter(n => n % 2 === 0).length;
+        if (evenCount > rule.params.maxEven) return false;
+      }
+      if (rule.id === 'sumRange') {
+        const sum = numbers.reduce((a, b) => a + b, 0);
+        if (sum < rule.params.min || sum > rule.params.max) return false;
+      }
+      if (rule.id === 'excludeRecent') {
+        if (numbers.some(n => excludeSet.has(n))) return false;
+      }
+    }
+    return true;
+  }
+
+  async function generateFilteredSet() {
+    const activeRules = ruleCatalog.filter(r => activeRuleIds.has(r.id));
+    if (activeRules.length === 0) return generateRandomSet();
+
+    let excludeSet = new Set();
+    const excludeRule = activeRules.find(r => r.id === 'excludeRecent');
+    if (excludeRule) excludeSet = await getRecentDrawNumbers(excludeRule.params.weeks);
+
+    for (let attempt = 0; attempt < 500; attempt++) {
+      const candidate = generateRandomSet();
+      if (passesFilters(candidate, activeRules, excludeSet)) return candidate;
+    }
+    return generateRandomSet(); // 조건이 너무 빡빡하면 순수 랜덤으로 대체
+  }
+
+  async function handleGenerate(idx) {
+    const numbers = await generateFilteredSet();
+    mySlots[idx] = { numbers, adopted: false, id: null };
+    renderSlots();
+  }
+
   function renderSlots() {
     const container = document.getElementById('slotContainer');
     const { status } = getLottoTiming();
@@ -662,11 +584,6 @@
             </div>` : ''}
         </div>`;
     }).join('');
-  }
-
-  function handleGenerate(idx) {
-    mySlots[idx] = { numbers: generateRandomSet(), adopted: false, id: null };
-    renderSlots();
   }
 
   async function handleAdopt(idx) {
@@ -729,7 +646,7 @@
     renderSlots();
   }
 
-  // ---------- 결과 / 랭킹 / 명예의 전당 ----------
+  // ---------- 결과 / 랭킹 / 명예의 전당 (랭킹 탭) ----------
   async function getLatestScoredRound() {
     const { data } = await db.from('lotto_draws')
       .select('round_no')
