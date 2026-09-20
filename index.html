@@ -72,6 +72,7 @@
     <button class="tab-btn" onclick="switchTab(this, 'generator')">추출기</button>
     <button class="tab-btn" onclick="switchTab(this, 'ranking')">랭킹</button>
     <button class="tab-btn" onclick="switchTab(this, 'news')">뉴스</button>
+    <button class="tab-btn" id="adminTabBtn" style="display:none;" onclick="switchTab(this, 'admin')">관리자</button>
   </div>
 
   <!-- 1. QR 스캔 & 내 서랍 -->
@@ -136,6 +137,14 @@
       </div>
     </div>
   </div>
+
+  <!-- 5. 관리자 전용: 규칙 요청 관리 -->
+  <div id="tab-admin" class="tab-content">
+    <div class="card">
+      <h3 style="font-size: 16px; margin-bottom: 10px;">규칙 요청 관리</h3>
+      <div id="adminRequestList"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -158,11 +167,13 @@
       statusText.innerText = `${emailId}님 환영합니다!`;
       btnAuth.innerText = '로그아웃';
       btnAuth.className = 'btn-auth logout';
+      document.getElementById('adminTabBtn').style.display = (currentUser.email === 'minkwan999@gmail.com') ? 'block' : 'none';
       await loadUserLottoHistory();
     } else {
       statusText.innerText = '로그인이 필요합니다';
       btnAuth.innerText = '구글 로그인';
       btnAuth.className = 'btn-auth';
+      document.getElementById('adminTabBtn').style.display = 'none';
       document.getElementById('historyList').innerHTML = '<p style="text-align: center; font-size: 13px; color: #9ca3af; padding: 16px 0;">로그인하시면 스캔한 로또가 여기에 표시됩니다.</p>';
       userPurchasedNumbers = [];
     }
@@ -214,6 +225,7 @@
     if (tab === 'generator') { renderStatusBanner(); loadMySlotsForThisRound(); loadRuleCatalog(); }
     if (tab === 'ranking') renderResultsSection();
     if (tab === 'news') loadNews();
+    if (tab === 'admin') loadAdminRequests();
   }
 
   function getBallClass(n) {
@@ -766,6 +778,69 @@
     if (error) { alert('요청 실패: ' + error.message); return; }
     textEl.value = '';
     alert('요청 감사해요! 검토 후 반영할게요.');
+  }
+
+  // ---------- 관리자 전용: 규칙 요청 관리 ----------
+  let adminRequestsCache = [];
+
+  function escapeAdminText(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  async function loadAdminRequests() {
+    const container = document.getElementById('adminRequestList');
+    const { data, error } = await db.from('rule_requests').select('*').order('created_at', { ascending: false });
+    if (error) { container.innerHTML = `<p style="color:red; font-size:12px;">불러오기 실패: ${error.message}</p>`; return; }
+    adminRequestsCache = data || [];
+    if (adminRequestsCache.length === 0) {
+      container.innerHTML = `<p style="font-size:12px; color:#9ca3af;">요청이 없어요.</p>`;
+      return;
+    }
+    container.innerHTML = adminRequestsCache.map(r => `
+      <div class="history-card">
+        <div class="history-header"><span>${new Date(r.created_at).toLocaleString('ko-KR')} · ${r.status}</span></div>
+        <p style="font-size:13px; margin-bottom:8px;">${escapeAdminText(r.text)}</p>
+        <div style="display:flex; gap:6px;">
+          <button class="btn-main" style="margin-top:0; flex:1; background:#059669;" onclick="handleAcceptRequest(${r.id})">채택</button>
+          <button class="btn-main" style="margin-top:0; flex:1; background:#6b7280;" onclick="handleRejectRequest(${r.id})">반려</button>
+          <button class="btn-post-del" onclick="handleDeleteRequest(${r.id})">삭제</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function handleAcceptRequest(reqId) {
+    const req = adminRequestsCache.find(r => r.id === reqId);
+    if (!req) return;
+
+    const id = prompt('규칙 ID (영문, 예: birthdayNumbers):');
+    if (!id) return;
+    const label = prompt('규칙 이름 (짧게):', req.text.slice(0, 20));
+    if (!label) return;
+    const description = prompt('설명 (한 줄):', '');
+    const paramsStr = prompt('params (JSON 형식, 없으면 {} 입력):', '{}');
+    let params;
+    try { params = JSON.parse(paramsStr); } catch (e) { alert('JSON 형식이 잘못됐어요.'); return; }
+
+    const { error: insertErr } = await db.from('rule_catalog').insert({ id, label, description, params, status: 'active' });
+    if (insertErr) { alert('규칙 추가 실패: ' + insertErr.message); return; }
+
+    await db.from('rule_requests').update({ status: 'accepted' }).eq('id', reqId);
+    alert('규칙 추가 완료!');
+    loadAdminRequests();
+  }
+
+  async function handleRejectRequest(reqId) {
+    const { error } = await db.from('rule_requests').update({ status: 'rejected' }).eq('id', reqId);
+    if (error) { alert('반려 실패: ' + error.message); return; }
+    loadAdminRequests();
+  }
+
+  async function handleDeleteRequest(reqId) {
+    if (!confirm('삭제할까요?')) return;
+    const { error } = await db.from('rule_requests').delete().eq('id', reqId);
+    if (error) { alert('삭제 실패: ' + error.message); return; }
+    loadAdminRequests();
   }
 </script>
 </body>
