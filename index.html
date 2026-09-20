@@ -118,6 +118,7 @@
       <textarea id="ruleRequestText" rows="2" placeholder="예: 생일 숫자만 넣고 싶어요 (로그인 필요)"
         style="width:100%; border:1px solid #d1d5db; border-radius:8px; padding:8px; font-size:13px; resize:none;"></textarea>
       <button class="btn-main" onclick="submitRuleRequest()">요청 보내기</button>
+      <div id="myRuleRequests"></div>
     </div>
   </div>
 
@@ -222,7 +223,7 @@
     currentTabName = tab;
 
     if (tab !== 'qr') stopScanner();
-    if (tab === 'generator') { renderStatusBanner(); loadMySlotsForThisRound(); loadRuleCatalog(); }
+    if (tab === 'generator') { renderStatusBanner(); loadMySlotsForThisRound(); loadRuleCatalog(); loadMyRuleRequests(); }
     if (tab === 'ranking') renderResultsSection();
     if (tab === 'news') loadNews();
     if (tab === 'admin') loadAdminRequests();
@@ -774,10 +775,35 @@
     const text = textEl.value.trim();
     if (!text) { alert('내용을 입력해주세요.'); return; }
 
-    const { error } = await db.from('rule_requests').insert({ user_id: currentUser.id, text });
+    const nickname = currentUser.email.split('@')[0];
+    const { error } = await db.from('rule_requests').insert({ user_id: currentUser.id, text, nickname });
     if (error) { alert('요청 실패: ' + error.message); return; }
     textEl.value = '';
     alert('요청 감사해요! 검토 후 반영할게요.');
+    loadMyRuleRequests();
+  }
+
+  async function loadMyRuleRequests() {
+    const container = document.getElementById('myRuleRequests');
+    if (!container) return;
+    if (!currentUser) { container.innerHTML = ''; return; }
+
+    const { data, error } = await db.from('rule_requests')
+      .select('*')
+      .eq('user_id', currentUser.id)
+      .order('created_at', { ascending: false });
+
+    if (error || !data || data.length === 0) { container.innerHTML = ''; return; }
+
+    const statusLabel = { pending: '검토 중', accepted: '채택됨 ✅', rejected: '반려됨' };
+    container.innerHTML = `<h4 style="font-size:13px; margin:14px 0 6px; color:#6b7280;">내 요청 내역</h4>` +
+      data.map(r => `
+        <div class="history-card" style="padding:10px 12px;">
+          <div style="font-size:12px; color:#9ca3af;">${new Date(r.created_at).toLocaleDateString('ko-KR')} · ${statusLabel[r.status] || r.status}</div>
+          <div style="font-size:13px; margin:4px 0;">${escapeAdminText(r.text)}</div>
+          ${r.response ? `<div style="font-size:12px; color:#2563eb; margin-top:4px;">↳ ${escapeAdminText(r.response)}</div>` : ''}
+        </div>
+      `).join('');
   }
 
   // ---------- 관리자 전용: 규칙 요청 관리 ----------
@@ -798,8 +824,9 @@
     }
     container.innerHTML = adminRequestsCache.map(r => `
       <div class="history-card">
-        <div class="history-header"><span>${new Date(r.created_at).toLocaleString('ko-KR')} · ${r.status}</span></div>
+        <div class="history-header"><span><strong>${escapeAdminText(r.nickname || '익명')}</strong> · ${new Date(r.created_at).toLocaleString('ko-KR')} · ${r.status}</span></div>
         <p style="font-size:13px; margin-bottom:8px;">${escapeAdminText(r.text)}</p>
+        ${r.response ? `<p style="font-size:12px; color:#9ca3af; margin-bottom:8px;">이전 응답: ${escapeAdminText(r.response)}</p>` : ''}
         <div style="display:flex; gap:6px;">
           <button class="btn-main" style="margin-top:0; flex:1; background:#059669;" onclick="handleAcceptRequest(${r.id})">채택</button>
           <button class="btn-main" style="margin-top:0; flex:1; background:#6b7280;" onclick="handleRejectRequest(${r.id})">반려</button>
@@ -822,16 +849,19 @@
     let params;
     try { params = JSON.parse(paramsStr); } catch (e) { alert('JSON 형식이 잘못됐어요.'); return; }
 
+    const responseMsg = prompt('요청자에게 보낼 메시지 (선택):', '반영했어요! 감사합니다 :)');
+
     const { error: insertErr } = await db.from('rule_catalog').insert({ id, label, description, params, status: 'active' });
     if (insertErr) { alert('규칙 추가 실패: ' + insertErr.message); return; }
 
-    await db.from('rule_requests').update({ status: 'accepted' }).eq('id', reqId);
+    await db.from('rule_requests').update({ status: 'accepted', response: responseMsg || null }).eq('id', reqId);
     alert('규칙 추가 완료!');
     loadAdminRequests();
   }
 
   async function handleRejectRequest(reqId) {
-    const { error } = await db.from('rule_requests').update({ status: 'rejected' }).eq('id', reqId);
+    const responseMsg = prompt('반려 사유 메시지 (선택):', '');
+    const { error } = await db.from('rule_requests').update({ status: 'rejected', response: responseMsg || null }).eq('id', reqId);
     if (error) { alert('반려 실패: ' + error.message); return; }
     loadAdminRequests();
   }
