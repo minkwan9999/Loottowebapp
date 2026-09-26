@@ -757,7 +757,7 @@
               <button class="btn-auth" style="padding:4px 10px; font-size:11px;"
                 onclick='shareResult(${latestRound}, [${r.numbers}], ${r.match_count}, ${r.official_rank || 'null'}, "${r.adopted_at}")'>공유</button>
             </div>`).join('') +
-          `<a href="https://opae.kr/lotto-tax/?utm_source=lotto&utm_medium=internal&utm_campaign=result_link" style="display:block; text-align:center; margin-top:10px; padding:10px; background:#1f2937; color:#fbbf24; border-radius:8px; font-size:12px; font-weight:bold; text-decoration:none;">💰 당첨되면 세금 얼마? 실수령액 계산기 →</a>`
+          
         : `<p style="font-size:12px; color:#9ca3af;">이번 회차엔 채택한 번호가 없어요.</p>`;
     } else {
       myResultHtml = `<p style="font-size:12px; color:#9ca3af;">로그인하면 내 결과를 볼 수 있어요.</p>`;
