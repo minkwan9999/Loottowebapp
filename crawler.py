@@ -51,47 +51,29 @@ def get_next_round_no():
     return res.data[0]["round_no"] + 1
 
 
-_lotto_session = None
-
-def get_lotto_session():
-    """동행복권 API는 브라우저처럼 접근한 요청만 받아주는 경우가 있어,
-    메인 페이지를 먼저 방문해 쿠키를 확보한 세션을 재사용한다."""
-    global _lotto_session
-    if _lotto_session is None:
-        s = requests.Session()
-        s.headers.update({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-            "Referer": "https://www.dhlottery.co.kr/gameResult.do?method=byWin",
-            "Accept": "application/json, text/javascript, */*; q=0.01",
-            "X-Requested-With": "XMLHttpRequest",
-        })
-        try:
-            s.get("https://www.dhlottery.co.kr/gameResult.do?method=byWin", timeout=10)
-        except Exception as e:
-            print("세션 초기화용 페이지 방문 실패(계속 진행):", e)
-        _lotto_session = s
-    return _lotto_session
-
-
 def fetch_draw_result(round_no):
-    """동행복권 공식 API로 특정 회차 결과 조회. 아직 추첨 전이면 None 반환."""
-    url = f"https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo={round_no}"
-    session = get_lotto_session()
-    res = session.get(url, timeout=10)
+    """동행복권 QR API로 특정 회차 결과 조회. 아직 추첨 전이면 None 반환."""
+    url = f"https://qr.dhlottery.co.kr/api/lottery/LOTTO/draw/{round_no}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Accept": "application/json",
+        "Referer": "https://qr.dhlottery.co.kr/",
+    }
+    res = requests.get(url, headers=headers, timeout=10)
     try:
         data = res.json()
     except ValueError:
         print(f"{round_no}회차 응답이 JSON이 아닙니다. status={res.status_code}, body={res.text[:200]}")
         return None
-    if data.get("returnValue") != "success":
-        print(f"{round_no}회차 아직 결과가 없습니다.")
+    if data.get("drawStatus") != "PRIZE_CONFIRMED":
+        print(f"{round_no}회차 아직 결과가 확정되지 않았습니다. drawStatus={data.get('drawStatus')}")
         return None
-    numbers = [data[f"drwtNo{i}"] for i in range(1, 7)]
+    numbers = [data[f"drawNo{i}"] for i in range(1, 7)]
     return {
-        "round_no": round_no,
+        "round_no": data["round"],
         "numbers": numbers,
-        "bonus_no": data["bnusNo"],
-        "drawn_at": data["drwNoDate"],
+        "bonus_no": data["bonusNo"],
+        "drawn_at": data["drawDate"],
     }
 
 
