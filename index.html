@@ -340,7 +340,7 @@
     return null;
   }
 
-  // 5. 내 서랍 조회 (채점된 회차는 결과를 바로 표시)
+  // 5. 내 서랍 조회 (채점된 회차는 당첨번호 + 결과를 함께 표시)
   async function loadUserLottoHistory() {
     if (!currentUser) return;
 
@@ -373,14 +373,33 @@
     userPurchasedNumbers = [];
     container.innerHTML = data.map(item => {
       const draw = item.round_no ? drawMap[item.round_no] : null;
+      const drawSet = (draw && draw.scored) ? new Set(draw.numbers) : null;
+
+      let winningHtml = '';
+      if (draw && draw.scored) {
+        const winBalls = draw.numbers.map(n => `<div class="ball ball-sm ${getBallClass(n)}">${n}</div>`).join('');
+        const bonusBall = `<div class="ball ball-sm ${getBallClass(draw.bonus_no)}" style="opacity:.55;">${draw.bonus_no}</div>`;
+        winningHtml = `
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px dashed #e5e7eb;">
+            <span style="font-size:11px; font-weight:bold; color:#6b7280; white-space:nowrap;">당첨번호</span>
+            <div class="ball-row" style="margin:0;">${winBalls}</div>
+            <span style="font-size:11px; color:#9ca3af;">+</span>
+            ${bonusBall}
+          </div>
+        `;
+      }
 
       const gameRows = item.games.map((g, idx) => {
         g.forEach(n => userPurchasedNumbers.push(n));
-        const balls = g.map(n => `<div class="ball ball-sm ${getBallClass(n)}">${n}</div>`).join('');
+
+        const balls = g.map(n => {
+          const isMatch = drawSet && drawSet.has(n);
+          const ringStyle = isMatch ? 'box-shadow:0 0 0 2px #059669, 0 1px 2px rgba(0,0,0,0.2);' : '';
+          return `<div class="ball ball-sm ${getBallClass(n)}" style="${ringStyle}">${n}</div>`;
+        }).join('');
 
         let resultBadge = '';
         if (draw && draw.scored) {
-          const drawSet = new Set(draw.numbers);
           const matchCount = g.filter(n => drawSet.has(n)).length;
           const bonusMatched = matchCount === 5 && g.includes(draw.bonus_no);
           const rank = calcRank(matchCount, bonusMatched);
@@ -408,6 +427,7 @@
             <span><strong>${item.round_no ? item.round_no + '회차' : '로또 용지'}</strong> (${item.games.length}게임) · ${scanDate}</span>
             <a href="${item.qr_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">공식 확인 ↗</a>
           </div>
+          ${winningHtml}
           ${gameRows}
         </div>
       `;
