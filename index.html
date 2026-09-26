@@ -331,7 +331,16 @@
     }
   }
 
-  // 5. 내 서랍 조회
+  function calcRank(matchCount, bonusMatched) {
+    if (matchCount === 6) return 1;
+    if (matchCount === 5 && bonusMatched) return 2;
+    if (matchCount === 5) return 3;
+    if (matchCount === 4) return 4;
+    if (matchCount === 3) return 5;
+    return null;
+  }
+
+  // 5. 내 서랍 조회 (채점된 회차는 결과를 바로 표시)
   async function loadUserLottoHistory() {
     if (!currentUser) return;
 
@@ -352,15 +361,41 @@
       return;
     }
 
+    const roundNos = [...new Set(data.filter(d => d.round_no).map(d => d.round_no))];
+    let drawMap = {};
+    if (roundNos.length > 0) {
+      const { data: draws } = await db.from('lotto_draws')
+        .select('round_no, numbers, bonus_no, scored')
+        .in('round_no', roundNos);
+      (draws || []).forEach(d => { drawMap[d.round_no] = d; });
+    }
+
     userPurchasedNumbers = [];
     container.innerHTML = data.map(item => {
+      const draw = item.round_no ? drawMap[item.round_no] : null;
+
       const gameRows = item.games.map((g, idx) => {
         g.forEach(n => userPurchasedNumbers.push(n));
         const balls = g.map(n => `<div class="ball ball-sm ${getBallClass(n)}">${n}</div>`).join('');
+
+        let resultBadge = '';
+        if (draw && draw.scored) {
+          const drawSet = new Set(draw.numbers);
+          const matchCount = g.filter(n => drawSet.has(n)).length;
+          const bonusMatched = matchCount === 5 && g.includes(draw.bonus_no);
+          const rank = calcRank(matchCount, bonusMatched);
+          resultBadge = `<span style="font-size:11px; font-weight:bold; color:${rank ? '#059669' : '#6b7280'};">${matchCount}개 일치${rank ? ` · ${rank}등!` : ''}</span>`;
+        } else if (item.round_no) {
+          resultBadge = `<span style="font-size:11px; color:#9ca3af;">추첨 대기중</span>`;
+        }
+
         return `
-          <div style="display:flex; align-items:center; justify-content:center; gap:8px; margin: 4px 0;">
-            <span style="font-size:11px; font-weight:bold; color:#6b7280; width:14px;">${String.fromCharCode(65 + idx)}</span>
-            <div class="ball-row" style="margin:0;">${balls}</div>
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin: 4px 0;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:11px; font-weight:bold; color:#6b7280; width:14px;">${String.fromCharCode(65 + idx)}</span>
+              <div class="ball-row" style="margin:0;">${balls}</div>
+            </div>
+            ${resultBadge}
           </div>
         `;
       }).join('');
@@ -371,7 +406,7 @@
         <div class="history-card">
           <div class="history-header">
             <span><strong>${item.round_no ? item.round_no + '회차' : '로또 용지'}</strong> (${item.games.length}게임) · ${scanDate}</span>
-            <a href="${item.qr_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">결과 보기 ↗</a>
+            <a href="${item.qr_url}" target="_blank" style="color: #2563eb; text-decoration: none; font-weight: 500;">공식 확인 ↗</a>
           </div>
           ${gameRows}
         </div>
