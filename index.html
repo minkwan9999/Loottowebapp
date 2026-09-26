@@ -122,7 +122,7 @@
     </div>
   </div>
 
-  <!-- 3. 랭킹 (내 결과 / 이번 주 랭킹 / 명예의 전당) -->
+  <!-- 3. 랭킹 (내 결과) -->
   <div id="tab-ranking" class="tab-content">
     <div class="card" id="resultsSection">
       <!-- renderResultsSection()이 채움 -->
@@ -662,7 +662,7 @@
     renderSlots();
   }
 
-  // ---------- 결과 / 랭킹 / 명예의 전당 (랭킹 탭) ----------
+  // ---------- 결과 (랭킹 탭: 본인 기록만) ----------
   async function getLatestScoredRound() {
     const { data } = await db.from('lotto_draws')
       .select('round_no')
@@ -702,41 +702,7 @@
       myResultHtml = `<p style="font-size:12px; color:#9ca3af;">로그인하면 내 결과를 볼 수 있어요.</p>`;
     }
 
-    const { data: allRows } = await db.from('predictions')
-      .select('user_id, nickname, match_count')
-      .eq('round_no', latestRound)
-      .not('match_count', 'is', null);
-
-    const bestByUser = {};
-    (allRows || []).forEach(r => {
-      if (!bestByUser[r.user_id] || r.match_count > bestByUser[r.user_id].match_count) {
-        bestByUser[r.user_id] = { nickname: r.nickname, match_count: r.match_count };
-      }
-    });
-    const ranking = Object.values(bestByUser).sort((a, b) => b.match_count - a.match_count).slice(0, 10);
-
-    const rankingHtml = `
-      <h4 style="font-size:14px; margin:14px 0 6px;">${latestRound}회차 랭킹 TOP 10</h4>
-      ${ranking.length ? ranking.map((r, i) => `
-        <div style="display:flex; justify-content:space-between; font-size:13px; padding:3px 0;">
-          <span>${i + 1}. ${r.nickname}</span><strong>${r.match_count}개</strong>
-        </div>`).join('') : '<p style="font-size:12px; color:#9ca3af;">참여자가 없어요.</p>'}
-    `;
-
-    const { data: hof } = await db.from('predictions')
-      .select('nickname, round_no, numbers, official_rank')
-      .not('official_rank', 'is', null)
-      .order('round_no', { ascending: false })
-      .limit(20);
-
-    const hofHtml = `
-      <h4 style="font-size:14px; margin:14px 0 6px;">🏆 명예의 전당</h4>
-      ${hof && hof.length ? hof.map(r => `
-        <div style="font-size:13px; padding:3px 0;">${r.round_no}회차 · ${r.nickname} · ${r.official_rank}등 (${r.numbers.join(',')})</div>
-      `).join('') : '<p style="font-size:12px; color:#9ca3af;">아직 없어요. 첫 주인공이 되어보세요!</p>'}
-    `;
-
-    container.innerHTML = myResultHtml + rankingHtml + hofHtml;
+    container.innerHTML = myResultHtml;
   }
 
   // ---------- 공유 카드 ----------
