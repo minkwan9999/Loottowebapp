@@ -54,8 +54,13 @@ def get_next_round_no():
 def fetch_draw_result(round_no):
     """동행복권 공식 API로 특정 회차 결과 조회. 아직 추첨 전이면 None 반환."""
     url = f"https://www.dhlottery.co.kr/common.do?method=getLottoNumber&drwNo={round_no}"
-    res = requests.get(url, timeout=10)
-    data = res.json()
+    headers = {"User-Agent": "Mozilla/5.0"}
+    res = requests.get(url, headers=headers, timeout=10)
+    try:
+        data = res.json()
+    except ValueError:
+        print(f"{round_no}회차 응답이 JSON이 아닙니다. status={res.status_code}, body={res.text[:200]}")
+        return None
     if data.get("returnValue") != "success":
         print(f"{round_no}회차 아직 결과가 없습니다.")
         return None
